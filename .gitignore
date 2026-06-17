@@ -1,0 +1,85 @@
+# Rust / Soroban Smart Contracts
+contracts/target/
+contracts/*.wasm
+contracts/Cargo.lock
+contracts/.cargo/
+contracts/**/*.rs.bk
+contracts/.soroban/
+
+# Node.js / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.eslintcache
+frontend/.vite/
+
+# Node.js / Backend
+backend/node_modules/
+backend/dist/
+backend/*.log
+backend/.env
+backend/.env.local
+backend/.env.*.local
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# General
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Environment Variables (SECURITY: Never commit secrets!)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+credentials/
+
+# Build Artifacts
+build/
+*.tgz
+*.tar.gz
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Generated Files
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,110 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-smart-contracts:
+    name: Test Soroban Contracts
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        target: wasm32-unknown-unknown
+        override: true
+    
+    - name: Add Soroban CLI
+      run: |
+        cargo install soroban-cli
+    
+    - name: Run contract tests
+      working-directory: ./contracts
+      run: |
+        cargo test
+    
+    - name: Build contract
+      working-directory: ./contracts
+      run: |
+        cargo build --target wasm32-unknown-unknown --release
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Run linter
+      working-directory: ./frontend
+      run: npm run lint
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run linter
+      working-directory: ./backend
+      run: npm run lint
+    
+    - name: Build backend
+      working-directory: ./backend
+      run: npm run build
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Cargo audit (smart contracts)
+      working-directory: ./contracts
+      run: |
+        cargo install cargo-audit
+        cargo audit
+    
+    - name: Run npm audit (frontend)
+      working-directory: ./frontend
+      run: npm audit
+    
+    - name: Run npm audit (backend)
+      working-directory: ./backend
+      run: npm audit
