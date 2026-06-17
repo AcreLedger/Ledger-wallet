@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AcreLedger 🌾
 
 Decentralized agricultural supply chain finance and micro-credit protocol built natively on the Stellar Network using Soroban smart contracts.
@@ -365,3 +366,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 Built with ❤️ for farmers and agricultural communities worldwide.
+=======
+# Ledger-wallet
+ Decentralized agricultural supply chain finance and micro-credit protocol built natively on the Stellar Network using Soroban smart contracts.
+>>>>>>> 2a371ea846f2000aea769fa869033538ab3fa917
