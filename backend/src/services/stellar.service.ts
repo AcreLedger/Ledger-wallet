@@ -60,10 +60,16 @@ export class StellarService {
    * Get USDC balance for an account
    */
   async getUSDCBalance(publicKey: string): Promise<string> {
+    interface StellarBalance {
+      asset_type: string;
+      asset_code?: string;
+      balance: string;
+    }
+
     try {
       const account = await this.getAccount(publicKey);
       const usdcBalance = account.balances.find(
-        (balance: any) => 
+        (balance: StellarBalance) => 
           balance.asset_type === 'credit_alphanum4' && 
           balance.asset_code === 'USDC'
       );

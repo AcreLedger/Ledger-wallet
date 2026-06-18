@@ -5,7 +5,7 @@ import { useCreditScore } from '../hooks/useCreditScore';
 
 export const Dashboard: React.FC = () => {
   const { publicKey, balance, disconnectWallet } = useStellar();
-  const { escrows, loading: escrowLoading } = useEscrow(publicKey);
+  const { escrows } = useEscrow(publicKey);
   const { creditData, loading: creditLoading } = useCreditScore(publicKey);
 
   const activeEscrows = escrows.filter(e => e.status === 'pending');

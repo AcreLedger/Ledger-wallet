@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Keypair, Transaction, Networks, Operation, Asset, Account, Server, BASE_FEE } from '@stellar/stellar-sdk';
+import Server, { Transaction, Networks } from '@stellar/stellar-sdk';
 
 interface StellarContextType {
   isConnected: boolean;
@@ -26,33 +26,37 @@ export const StellarProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Check for Freighter wallet on mount
   useEffect(() => {
+    const checkFreighterConnection = async () => {
+      try {
+        if (window.freightersetup) {
+          const isConnected = await window.freightersetup.isConnected();
+          setIsConnected(isConnected);
+          if (isConnected) {
+            const publicKey = await window.freightersetup.getPublicKey();
+            setPublicKey(publicKey);
+            await fetchBalance(publicKey);
+          }
+        }
+      } catch (err) {
+        console.error('Freighter connection check failed:', err);
+      }
+    };
+
     checkFreighterConnection();
   }, []);
 
-  const checkFreighterConnection = async () => {
-    try {
-      // @ts-ignore - Freighter extension
-      if (window.freightersetup && window.freightersetup !== undefined) {
-        const isConnected = await window.freightersetup.isConnected();
-        setIsConnected(isConnected);
-        if (isConnected) {
-          // @ts-ignore
-          const publicKey = await window.freightersetup.getPublicKey();
-          setPublicKey(publicKey);
-          await fetchBalance(publicKey);
-        }
-      }
-    } catch (err) {
-      console.error('Freighter connection check failed:', err);
-    }
-  };
-
   const fetchBalance = async (pubKey: string) => {
     try {
+      interface StellarBalance {
+        asset_type: string;
+        asset_code?: string;
+        balance: string;
+      }
+
       const account = await server.loadAccount(pubKey);
       const balance = account.balances
-        .find((b: any) => b.asset_type === 'credit_alphanum4' && b.asset_code === 'USDC')
-        || account.balances.find((b: any) => b.asset_type === 'native');
+        .find((b: StellarBalance) => b.asset_type === 'credit_alphanum4' && b.asset_code === 'USDC')
+        || account.balances.find((b: StellarBalance) => b.asset_type === 'native');
       
       setBalance(balance ? balance.balance : '0');
     } catch (err) {
@@ -66,12 +70,10 @@ export const StellarProvider: React.FC<{ children: ReactNode }> = ({ children })
     setError(null);
     
     try {
-      // @ts-ignore - Freighter extension
       if (!window.freightersetup) {
         throw new Error('Freighter wallet extension not found. Please install Freighter.');
       }
 
-      // @ts-ignore
       const publicKey = await window.freightersetup.getPublicKey();
       setPublicKey(publicKey);
       setIsConnected(true);
@@ -98,7 +100,6 @@ export const StellarProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     try {
       const xdr = transaction.toXDR();
-      // @ts-ignore - Freighter extension
       const signedXdr = await window.freightersetup.signXDR(xdr, publicKey);
       const signedTx = new Transaction(signedXdr, Networks.TESTNET);
       return signedTx;

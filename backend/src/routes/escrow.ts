@@ -31,10 +31,10 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id: _id } = req.params;
     
     // In production, this would query the specific escrow from the contract
-    res.status(501).json({ error: 'Not implemented - would query Soroban contract' });
+    res.status(501).json({ error: `Not implemented - would query Soroban contract for escrow ${_id}` });
   } catch (error) {
     console.error('Error fetching escrow:', error);
     res.status(500).json({ error: 'Failed to fetch escrow' });
@@ -115,7 +115,7 @@ router.get('/:id/status', async (req: Request, res: Response) => {
     const { id: _id } = req.params;
     
     // In production, this would query the contract for current status
-    res.status(501).json({ error: 'Not implemented - would query Soroban contract' });
+    res.status(501).json({ error: `Not implemented - would query Soroban contract status for escrow ${_id}` });
   } catch (error) {
     console.error('Error fetching escrow status:', error);
     res.status(500).json({ error: 'Failed to fetch escrow status' });

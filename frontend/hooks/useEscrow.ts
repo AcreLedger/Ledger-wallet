@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export interface EscrowData {
   id: string;
@@ -16,20 +16,19 @@ export const useEscrow = (publicKey: string | null) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (publicKey) {
-      fetchEscrows();
+  const fetchEscrows = useCallback(async () => {
+    if (!publicKey) {
+      setEscrows([]);
+      return;
     }
-  }, [publicKey]);
 
-  const fetchEscrows = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch(`/api/v1/escrow?address=${publicKey}`);
       if (!response.ok) throw new Error('Failed to fetch escrows');
-      
+
       const data = await response.json();
       setEscrows(data.escrows || []);
     } catch (err) {
@@ -38,7 +37,11 @@ export const useEscrow = (publicKey: string | null) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicKey]);
+
+  useEffect(() => {
+    fetchEscrows();
+  }, [fetchEscrows]);
 
   const createEscrow = async (escrowData: {
     farmer: string;
@@ -61,7 +64,7 @@ export const useEscrow = (publicKey: string | null) => {
       if (!response.ok) throw new Error('Failed to create escrow');
       
       const data = await response.json();
-      setEscrows([...escrows, data.escrow]);
+      setEscrows(prev => [...prev, data.escrow]);
       return data.escrow;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create escrow');

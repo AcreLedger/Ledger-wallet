@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import escrowRoutes from './routes/escrow';
@@ -25,7 +25,7 @@ app.use('/api/v1/escrow', escrowRoutes);
 app.use('/api/v1/farmer', farmerRoutes);
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, _next: any) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });
