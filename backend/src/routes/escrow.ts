@@ -84,7 +84,7 @@ router.post('/', async (req: Request, res: Response) => {
  */
 router.post('/:id/release', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id: _id } = req.params;
     const { validator, qualityRating } = req.body;
 
     if (!validator) {
@@ -96,7 +96,7 @@ router.post('/:id/release', async (req: Request, res: Response) => {
     }
 
     // Release escrow (would interact with Soroban contract in production)
-    const updatedEscrow = await stellarService.releaseEscrow(id, validator, qualityRating);
+    const updatedEscrow = await stellarService.releaseEscrow(_id, validator, qualityRating);
 
     res.json({ escrow: updatedEscrow });
   } catch (error) {
@@ -112,7 +112,7 @@ router.post('/:id/release', async (req: Request, res: Response) => {
  */
 router.get('/:id/status', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { id: _id } = req.params;
     
     // In production, this would query the contract for current status
     res.status(501).json({ error: 'Not implemented - would query Soroban contract' });

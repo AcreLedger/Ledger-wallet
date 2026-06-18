@@ -25,7 +25,7 @@ app.use('/api/v1/escrow', escrowRoutes);
 app.use('/api/v1/farmer', farmerRoutes);
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: any) => {
+app.use((err: Error, req: Request, res: Response, _next: any) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });

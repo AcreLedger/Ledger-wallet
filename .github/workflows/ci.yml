@@ -22,6 +22,11 @@ jobs:
         target: wasm32-unknown-unknown
         override: true
     
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libdbus-1-dev pkg-config
+    
     - name: Add Soroban CLI
       run: |
         cargo install soroban-cli

@@ -1,4 +1,5 @@
-import { Server, Networks, Transaction, Asset } from '@stellar/stellar-sdk';
+import { Networks, Transaction } from '@stellar/stellar-sdk';
+import { Horizon } from '@stellar/stellar-sdk';
 
 export interface EscrowData {
   id: string;
@@ -29,13 +30,13 @@ export interface CreditScoreData {
 }
 
 export class StellarService {
-  private server: Server;
+  private server: Horizon.Server;
   private networkPassphrase: string;
   private contractId: string;
 
   constructor() {
     const horizonUrl = process.env.STELLAR_HORIZON_URL || 'https://horizon-testnet.stellar.org';
-    this.server = new Server(horizonUrl);
+    this.server = new Horizon.Server(horizonUrl);
     this.networkPassphrase = process.env.STELLAR_NETWORK === 'mainnet' 
       ? Networks.PUBLIC 
       : Networks.TESTNET;
@@ -119,7 +120,7 @@ export class StellarService {
   /**
    * Get escrows for a specific address
    */
-  async getEscrows(address: string): Promise<EscrowData[]> {
+  async getEscrows(_address: string): Promise<EscrowData[]> {
     // In production, this would query the Soroban contract state
     // For now, return empty array (would be cached from database)
     return [];
@@ -128,7 +129,7 @@ export class StellarService {
   /**
    * Get credit score for a farmer
    */
-  async getCreditScore(farmerAddress: string): Promise<CreditScoreData | null> {
+  async getCreditScore(_farmerAddress: string): Promise<CreditScoreData | null> {
     // In production, this would:
     // 1. Query the Soroban contract for credit score
     // 2. Query trade records from the contract
@@ -141,7 +142,7 @@ export class StellarService {
   /**
    * Get trade history for a farmer
    */
-  async getTradeHistory(farmerAddress: string): Promise<TradeRecord[]> {
+  async getTradeHistory(_farmerAddress: string): Promise<TradeRecord[]> {
     // In production, this would query the Soroban contract for trade records
     return [];
   }
