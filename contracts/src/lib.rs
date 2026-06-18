@@ -1,4 +1,4 @@
-use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Vec, Symbol};
 
 /// Escrow contract for AcreLedger agricultural supply chain finance
 /// Handles instant payouts from buyers to farmers with warehouse validation
@@ -6,8 +6,11 @@ use soroban_sdk::{contract, contractimpl, Address, Env, String, Vec};
 pub struct AcreLedgerEscrow;
 
 /// Contract state representing an escrow transaction
+#[contracttype]
 #[derive(Clone)]
 pub struct Escrow {
+    /// Escrow identifier
+    pub id: u64,
     /// Buyer address who locked funds
     pub buyer: Address,
     /// Farmer address who will receive funds
@@ -27,6 +30,7 @@ pub struct Escrow {
 impl Escrow {
     /// Create a new escrow instance
     pub fn new(
+        id: u64,
         buyer: Address,
         farmer: Address,
         validator: Address,
@@ -35,6 +39,7 @@ impl Escrow {
         created_at: u64,
     ) -> Self {
         Escrow {
+            id,
             buyer,
             farmer,
             validator,
@@ -47,6 +52,7 @@ impl Escrow {
 }
 
 /// Trade record for credit score calculation
+#[contracttype]
 #[derive(Clone)]
 pub struct TradeRecord {
     /// Farmer address
@@ -62,6 +68,7 @@ pub struct TradeRecord {
 }
 
 /// Credit score data for farmers
+#[contracttype]
 #[derive(Clone)]
 pub struct CreditScore {
     /// Farmer address
@@ -94,9 +101,10 @@ pub enum Error {
 #[contractimpl]
 impl AcreLedgerEscrow {
     /// Storage keys for persistent data
-    const ESCROW_KEY: soroban_sdk::symbol_short!("escrow");
-    const TRADE_RECORDS_KEY: soroban_sdk::symbol_short!("trades");
-    const CREDIT_SCORES_KEY: soroban_sdk::symbol_short!("credit");
+    const ESCROW_KEY: Symbol = symbol_short!("escrow");
+    const ESCROW_COUNTER_KEY: Symbol = symbol_short!("esc_ctr");
+    const TRADE_RECORDS_KEY: Symbol = symbol_short!("trades");
+    const CREDIT_SCORES_KEY: Symbol = symbol_short!("credit");
 
     /// Initialize a new escrow transaction
     /// 
@@ -124,9 +132,10 @@ impl AcreLedgerEscrow {
             panic!("Invalid amount: must be positive");
         }
 
-        let escrow_id = env.storage().instance().get(&Self::ESCROW_KEY).unwrap_or(0u64) + 1;
+        let escrow_id = env.storage().instance().get(&Self::ESCROW_COUNTER_KEY).unwrap_or(0u64) + 1;
         
         let escrow = Escrow::new(
+            escrow_id,
             buyer.clone(),
             farmer.clone(),
             validator,
@@ -138,6 +147,7 @@ impl AcreLedgerEscrow {
         let mut escrows: Vec<Escrow> = env.storage().instance().get(&Self::ESCROW_KEY).unwrap_or(Vec::new(&env));
         escrows.push_back(escrow);
         env.storage().instance().set(&Self::ESCROW_KEY, &escrows);
+        env.storage().instance().set(&Self::ESCROW_COUNTER_KEY, &escrow_id);
 
         escrow_id
     }
@@ -164,10 +174,9 @@ impl AcreLedgerEscrow {
         let mut escrows: Vec<Escrow> = env.storage().instance().get(&Self::ESCROW_KEY)
             .expect("Escrow not found");
 
-        let escrow_index = escrows.iter().position(|e| {
-            // Simple check - in production, you'd have proper ID mapping
-            true
-        }).expect("Escrow not found");
+        let escrow_index_usize = escrows.iter().position(|e| e.id == escrow_id)
+            .expect("Escrow not found");
+        let escrow_index = u32::try_from(escrow_index_usize).unwrap();
 
         let escrow = escrows.get(escrow_index).unwrap();
 
@@ -180,8 +189,8 @@ impl AcreLedgerEscrow {
         }
 
         // Calculate distribution
-        let farmer_amount = escrow.amount * 85 / 100;
-        let cooperative_amount = escrow.amount * 15 / 100;
+        let _farmer_amount = escrow.amount * 85 / 100;
+        let _cooperative_amount = escrow.amount * 15 / 100;
 
         // In a real implementation, you'd transfer tokens here
         // For now, we just update the state
@@ -238,10 +247,12 @@ impl AcreLedgerEscrow {
             .unwrap_or(Vec::new(&env));
 
         // Filter trades for this farmer
-        let farmer_trades: Vec<TradeRecord> = trades.iter()
-            .filter(|t| t.farmer == farmer)
-            .cloned()
-            .collect();
+        let mut farmer_trades = Vec::new(&env);
+        for trade in trades.iter() {
+            if trade.farmer == farmer {
+                farmer_trades.push_back(trade);
+            }
+        }
 
         if farmer_trades.is_empty() {
             return;
@@ -274,7 +285,8 @@ impl AcreLedgerEscrow {
             .unwrap_or(Vec::new(&env));
 
         // Update existing or add new score
-        if let Some(index) = scores.iter().position(|s| s.farmer == farmer) {
+        if let Some(index_usize) = scores.iter().position(|s| s.farmer == farmer) {
+            let index = u32::try_from(index_usize).unwrap();
             scores.set(index, credit_score);
         } else {
             scores.push_back(credit_score);
@@ -289,7 +301,14 @@ impl AcreLedgerEscrow {
             .get(&Self::CREDIT_SCORES_KEY)
             .unwrap_or(Vec::new(&env));
 
-        scores.iter().find(|s| s.farmer == farmer).cloned()
+        let mut result: Option<CreditScore> = None;
+        for score in scores.iter() {
+            if score.farmer == farmer {
+                result = Some(score.clone());
+                break;
+            }
+        }
+        result
     }
 
     /// Get all escrows for a specific address (buyer or farmer)
@@ -298,20 +317,25 @@ impl AcreLedgerEscrow {
             .get(&Self::ESCROW_KEY)
             .unwrap_or(Vec::new(&env));
 
-        escrows.iter()
-            .filter(|e| e.buyer == address || e.farmer == address)
-            .cloned()
-            .collect()
+        let mut matched = Vec::new(&env);
+        for escrow in escrows.iter() {
+            if escrow.buyer == address || escrow.farmer == address {
+                matched.push_back(escrow);
+            }
+        }
+        matched
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use soroban_sdk::testutils::Address as _;
 
     #[test]
     fn test_escrow_initialization() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, AcreLedgerEscrow);
         let client = AcreLedgerEscrowClient::new(&env, &contract_id);
 
@@ -335,6 +359,7 @@ mod test {
     #[test]
     fn test_escrow_release() {
         let env = Env::default();
+        env.mock_all_auths();
         let contract_id = env.register_contract(None, AcreLedgerEscrow);
         let client = AcreLedgerEscrowClient::new(&env, &contract_id);
 
